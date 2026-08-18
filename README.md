@@ -31,10 +31,10 @@ venv/Scripts/pip install -r requirements.txt       # Windows (Linux: venv/bin/pi
 copy .env.example .env                             # заполнить (минимум: SECRET_KEY, ADMIN_VK_*)
 venv/Scripts/python -m alembic upgrade head        # создать БД
 cd web && npm install && npm run build && cd ..    # собрать админку
-APP_ENV=dev venv/Scripts/python -m uvicorn app.main:app --port 8002
+APP_ENV=dev venv/Scripts/python -m uvicorn app.main:app --port 8004
 ```
 
-- Админка: http://127.0.0.1:8002/pay/admin/ (вход через VK ID; в dev есть `POST /pay/api/auth/dev-login {vk_id}`)
+- Админка: http://127.0.0.1:8004/pay/admin/ (вход через VK ID; в dev есть `POST /pay/api/auth/dev-login {vk_id}`)
 - Тесты: `venv/Scripts/python -m pytest app/tests -q`
 
 ## ENV (`.env`)
@@ -85,7 +85,7 @@ APP_ENV=dev venv/Scripts/python -m uvicorn app.main:app --port 8002
 
 ```nginx
 location /pay/ {
-    proxy_pass http://127.0.0.1:8002;
+    proxy_pass http://127.0.0.1:8004;
     proxy_set_header Host $host;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;  # обязателен для IP-allowlist MONETA
     proxy_set_header X-Forwarded-Proto $scheme;
@@ -112,7 +112,7 @@ location /pay/ {
   /opt/pay-gateway/deploy/deploy.sh     # теперь до конца
   ```
 - `pay-gateway.service` — systemd-юнит: gunicorn, **`-w 1`** (строго один воркер —
-  scheduler и webhook-dispatcher живут в процессе), порт 8002.
+  scheduler и webhook-dispatcher живут в процессе), порт 8004.
 - `nginx-pay.conf.example` — location `/pay/` с обязательным
   `proxy_set_header X-Forwarded-For ...` (IP-allowlist колбэков MONETA).
 - `backup.sh` — бэкап БД (sqlite3 `.backup`, консистентно при WAL), в крон раз в 6 ч.

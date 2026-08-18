@@ -51,5 +51,5 @@ sleep 2
 systemctl --no-pager -l status pay-gateway | head -8 || true
 
 echo -n "[deploy] health check: "
-curl -fsS http://127.0.0.1:8002/pay/health && echo " — OK"
+curl -fsS http://127.0.0.1:8004/pay/health && echo " — OK"
 echo "[deploy] готово. Админка: https://<домен>/pay/admin/"

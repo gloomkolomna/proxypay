@@ -1,20 +1,28 @@
-# FastPanel / nginx: платёжный шлюз pay-gateway (порт 8002)
-# Вставить в server {} домена belovolovhome.ru (или включить отдельным файлом).
+# ===== Pay Gateway (ProxyPay) =====
+# Вставить в /etc/nginx/fastpanel2-sites/belovolovhom_usr/belovolovhome.ru.includes
+# (в том же стиле, что и остальные секции файла).
 #
+# Порт 8004 (8000=crm, 8001=dragons, 8002=krestiki-s-korgi, 8003=magicfarm).
+# Маршруты шлюза уже включают префикс /pay — proxy_pass БЕЗ URI, путь уходит как есть.
 # ВАЖНО: X-Forwarded-For обязателен — шлюз проверяет IP колбэков MONETA
 # (MONETA_CALLBACK_IPS) по XFF; без заголовка увидит 127.0.0.1 и отвергнет колбэк.
 
-location /pay/ {
-    proxy_pass http://127.0.0.1:8002;
+location = /pay {
+    return 301 /pay/;
+}
+
+location ^~ /pay/ {
+    proxy_pass http://127.0.0.1:8004;
     proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
     proxy_read_timeout 120s;
+    proxy_send_timeout 120s;
 }
 
-# Отдельный точный location для колбэка НЕ нужен — /pay/moneta/callback
-# покрывается префиксом /pay/ (форма MONETA шлёт на этот путь).
+# Отдельный location для /pay/moneta/callback НЕ нужен — префикс /pay/ покрывает всё.
+# Админка /pay/admin/ раздаётся самим FastAPI (web/dist через StaticFiles).
 #
-# В кабинете MONETA (тестовый ИЛИ прод-счёт):
-#   Result URL   = https://belovolovhome.ru/pay/moneta/callback
-#   Success/Fail задаются per-order в форме (MNT_SUCCESS_URL/MNT_FAIL_URL).
+# В кабинете MONETA (тестовый И прод-счёт — по очереди, см. план Этапы 4–5):
+#   Result URL = https://belovolovhome.ru/pay/moneta/callback

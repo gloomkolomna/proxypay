@@ -6,7 +6,7 @@ export default defineConfig({
   base: '/pay/admin/',
   server: {
     proxy: {
-      '/pay/api': 'http://127.0.0.1:8002',
+      '/pay/api': 'http://127.0.0.1:8004',
     },
   },
   build: { outDir: 'dist', sourcemap: false },

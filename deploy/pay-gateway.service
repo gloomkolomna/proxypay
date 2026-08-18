@@ -6,10 +6,11 @@ After=network.target
 WorkingDirectory=/opt/pay-gateway
 Environment=PATH=/opt/pay-gateway/venv/bin
 Environment=PYTHONPATH=/opt/pay-gateway/app
+# Порт 8004: 8000=crm, 8001=dragons, 8002=krestiki-s-korgi, 8003=magicfarm
 ExecStart=/opt/pay-gateway/venv/bin/gunicorn \
     -w 1 \
     -k uvicorn.workers.UvicornWorker \
-    --bind 127.0.0.1:8002 \
+    --bind 127.0.0.1:8004 \
     --access-logfile /var/log/pay-gateway/access.log \
     --error-logfile /var/log/pay-gateway/error.log \
     --timeout 120 \
