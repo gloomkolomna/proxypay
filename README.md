@@ -99,22 +99,24 @@ location /pay/ {
 
 ## Развёртывание (прод)
 
+Репозиторий: https://github.com/gloomkolomna/proxypay.git
+
 Артефакты в `deploy/`:
+- `deploy.sh` — **основной способ**: обновляет код из git, ставит зависимости,
+  гоняет миграции, собирает админку, перезапускает сервис и делает health-check.
+  Первый запуск:
+  ```bash
+  git clone -b main https://github.com/gloomkolomna/proxypay.git /opt/pay-gateway
+  /opt/pay-gateway/deploy/deploy.sh     # остановится: заполни .env
+  nano /opt/pay-gateway/.env            # SECRET_KEY, ADMIN_VK_*, MONETA_*
+  /opt/pay-gateway/deploy/deploy.sh     # теперь до конца
+  ```
 - `pay-gateway.service` — systemd-юнит: gunicorn, **`-w 1`** (строго один воркер —
-  scheduler и webhook-dispatcher живут в процессе), порт 8002, путь `/opt/pay-gateway`.
-  Установка: `cp deploy/pay-gateway.service /etc/systemd/system/ && systemctl enable --now pay-gateway`.
+  scheduler и webhook-dispatcher живут в процессе), порт 8002.
 - `nginx-pay.conf.example` — location `/pay/` с обязательным
   `proxy_set_header X-Forwarded-For ...` (IP-allowlist колбэков MONETA).
 - `backup.sh` — бэкап БД (sqlite3 `.backup`, консистентно при WAL), в крон раз в 6 ч.
   **БД содержит реестр игр и секреты** — потеря критична (план §9).
 
-Первый запуск на сервере:
-```bash
-python3 -m venv venv && venv/bin/pip install -r requirements.txt
-cp .env.example .env && nano .env      # SECRET_KEY, ADMIN_VK_*, MONETA_*
-venv/bin/python -m alembic upgrade head
-(cd web && npm install && npm run build)
-mkdir -p /var/log/pay-gateway
-```
 В кабинете MONETA: Result URL = `https://<домен>/pay/moneta/callback`.
 Дальше: админка `/pay/admin/` → создать игру (секреты — в `.env` игры).
