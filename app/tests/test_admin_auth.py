@@ -53,8 +53,10 @@ def test_vk_callback_denies_foreign_vk(client, monkeypatch):
 
 def test_vk_callback_success_sets_cookie(client, monkeypatch):
     import routes.auth_admin as ra
+    exchanged = {}
 
     async def fake_exchange(code, verifier, device_id, state=""):
+        exchanged["device_id"] = device_id
         return {"access_token": "tok"}
 
     async def fake_user_info(access_token):
@@ -66,11 +68,16 @@ def test_vk_callback_success_sets_cookie(client, monkeypatch):
     login = client.get("/pay/api/auth/vk-login", follow_redirects=False)
     state_cookie = login.cookies["pg_oauth_state"]
 
-    resp = client.get(f"/pay/api/auth/vk-callback?code=x&state={state_cookie}",
-                      follow_redirects=False)
+    # VK ID code_v2 возвращает device_id в колбэке — он обязан попасть в обмен
+    resp = client.get(
+        f"/pay/api/auth/vk-callback?code=x&state={state_cookie}"
+        f"&device_id=device-from-vk-123",
+        follow_redirects=False,
+    )
     assert resp.status_code in (302, 307)
     assert "/pay/admin" in resp.headers["location"]
     assert "pg_admin_token" in resp.cookies
+    assert exchanged["device_id"] == "device-from-vk-123"
     # токен из cookie работает как авторизация
     me = client.get("/pay/api/auth/me")
     assert me.status_code == 200

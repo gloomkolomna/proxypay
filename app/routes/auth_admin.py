@@ -1,5 +1,7 @@
 """/pay/api/auth/* — вход в админку через VK ID (PKCE), me, dev-login (только dev)."""
 
+import secrets
+
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel
@@ -38,8 +40,8 @@ async def vk_callback(request: Request):
     if state and state != cookie_state:
         raise HTTPException(status_code=400, detail="state mismatch")
 
-    import secrets as _secrets
-    device_id = _secrets.token_hex(16)
+    # VK ID code_v2 привязывает код к device_id из колбэка — использовать его
+    device_id = request.query_params.get("device_id") or secrets.token_hex(16)
     token_data = await exchange_vk_code(code, verifier, device_id, state or "")
     user_info = await get_vk_user_info(token_data.get("access_token", ""))
     try:
