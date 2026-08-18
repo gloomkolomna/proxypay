@@ -1,0 +1,25 @@
+[Unit]
+Description=Pay Gateway (ProxyPay, FastAPI gunicorn)
+After=network.target
+
+[Service]
+WorkingDirectory=/opt/pay-gateway
+Environment=PATH=/opt/pay-gateway/venv/bin
+Environment=PYTHONPATH=/opt/pay-gateway/app
+ExecStart=/opt/pay-gateway/venv/bin/gunicorn \
+    -w 1 \
+    -k uvicorn.workers.UvicornWorker \
+    --bind 127.0.0.1:8002 \
+    --access-logfile /var/log/pay-gateway/access.log \
+    --error-logfile /var/log/pay-gateway/error.log \
+    --timeout 120 \
+    app.main:app
+Restart=always
+RestartSec=5
+
+# БД содержит секреты игр — ограничиваем доступ
+ReadWritePaths=/opt/pay-gateway
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target

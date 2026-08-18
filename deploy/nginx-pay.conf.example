@@ -1,0 +1,20 @@
+# FastPanel / nginx: платёжный шлюз pay-gateway (порт 8002)
+# Вставить в server {} домена belovolovhome.ru (или включить отдельным файлом).
+#
+# ВАЖНО: X-Forwarded-For обязателен — шлюз проверяет IP колбэков MONETA
+# (MONETA_CALLBACK_IPS) по XFF; без заголовка увидит 127.0.0.1 и отвергнет колбэк.
+
+location /pay/ {
+    proxy_pass http://127.0.0.1:8002;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+    proxy_read_timeout 120s;
+}
+
+# Отдельный точный location для колбэка НЕ нужен — /pay/moneta/callback
+# покрывается префиксом /pay/ (форма MONETA шлёт на этот путь).
+#
+# В кабинете MONETA (тестовый ИЛИ прод-счёт):
+#   Result URL   = https://belovolovhome.ru/pay/moneta/callback
+#   Success/Fail задаются per-order в форме (MNT_SUCCESS_URL/MNT_FAIL_URL).
